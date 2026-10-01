@@ -1,0 +1,11 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "niri_computer_use": {
+      "type": "stdio",
+      "command": "/bin/sh",
+      "args": ["-c", "task_data=$XDG_DATA_HOME; if [ -z \"$task_data\" ]; then task_data=$HOME/.local/share; fi; exec \"$task_data/niri-computer-use/bin/computer-use-linux\" mcp"],
+      "env": {"COMPUTER_USE_LINUX_ENABLE_SHELL": "0"}
+    }
+  }
+}

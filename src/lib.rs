@@ -5,10 +5,13 @@ mod atspi_tree_impl;
 mod cli;
 mod command_runner;
 mod cosmic_helper;
+mod desktop_apps;
 #[path = "diagnostics.rs"]
 mod diagnostics_impl;
 mod gnome_extension;
 mod identity;
+mod keyboard;
+mod niri_pointer;
 mod remote_desktop;
 #[path = "screenshot.rs"]
 mod screenshot_impl;
@@ -21,10 +24,10 @@ mod ydotool;
 
 pub mod atspi_tree {
     pub(crate) use crate::atspi_tree_impl::{
-        focused_element_summary_in_app, list_accessible_apps, object_ref_owner_pid, perform_action,
-        perform_named_action, probe_focused_element, set_element_value,
-        snapshot_accessibility_tree, snapshot_limits, AccessibleAppSummary, FocusProbe,
-        FocusedElementSummary, ValueSetInvocation,
+        focus_element, focused_element_summary_in_app, list_accessible_apps, object_ref_owner_pid,
+        perform_action, perform_named_action, probe_focused_element, select_element_text,
+        set_element_value, snapshot_accessibility_tree, snapshot_limits, AccessibleAppSummary,
+        FocusProbe, FocusedElementSummary, ValueSetInvocation,
     };
     pub use crate::atspi_tree_impl::{
         snapshot_tree, AccessibilityAction, AccessibilityNode, AccessibilityText,

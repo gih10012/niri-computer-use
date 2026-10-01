@@ -1,0 +1,42 @@
+{
+  "passed": true,
+  "rounds": 3,
+  "cases": [
+    {
+      "name": "r1/unknown-app-rejected",
+      "passed": true
+    },
+    {
+      "name": "r1/launch-and-focus",
+      "passed": true
+    },
+    {
+      "name": "r1/reuse-existing-window",
+      "passed": true
+    },
+    {
+      "name": "r2/unknown-app-rejected",
+      "passed": true
+    },
+    {
+      "name": "r2/launch-and-focus",
+      "passed": true
+    },
+    {
+      "name": "r2/reuse-existing-window",
+      "passed": true
+    },
+    {
+      "name": "r3/unknown-app-rejected",
+      "passed": true
+    },
+    {
+      "name": "r3/launch-and-focus",
+      "passed": true
+    },
+    {
+      "name": "r3/reuse-existing-window",
+      "passed": true
+    }
+  ]
+}

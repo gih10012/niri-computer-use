@@ -1,0 +1,10 @@
+{
+  "name": "niri-local",
+  "interface": {"displayName": "niri Desktop Tools"},
+  "plugins": [{
+    "name": "niri-computer-use",
+    "source": {"source": "local", "path": "./plugins/niri-computer-use"},
+    "policy": {"installation": "AVAILABLE", "authentication": "ON_INSTALL"},
+    "category": "Productivity"
+  }]
+}

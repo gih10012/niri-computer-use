@@ -24,7 +24,15 @@ pub async fn focus_window_target(target: &WindowTarget) -> Result<WindowFocusRes
     let requested_window = resolve_window_target(&windows, target)?.clone();
     ensure_backend_can_focus_target(target, &requested_window)?;
 
-    registry::activate_window(&requested_window).await?;
+    // niri focus-window can recenter its scrolling viewport even when this
+    // window already has focus. Repeating it invalidates screenshot pixels.
+    // Still query focus freshly below; cached focus is not input authorization.
+    if requested_window.backend != "niri" || !requested_window.focused {
+        registry::activate_window(&requested_window).await?;
+        if requested_window.backend == "niri" {
+            tokio::time::sleep(Duration::from_millis(500)).await;
+        }
+    }
 
     let focused_window = wait_for_focused_window(&requested_window).await;
     let exact_window_focused = focused_window

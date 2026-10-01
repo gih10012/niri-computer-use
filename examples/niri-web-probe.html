@@ -1,0 +1,15 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>niri Computer Use web probe</title>
+<style>body{font:24px sans-serif;padding:30px}input,button,div{font:inherit;margin:12px;padding:12px}#rich{min-height:100px;border:2px solid #888}</style>
+<input id="text" aria-label="Probe text" autofocus>
+<div id="rich" contenteditable="true" role="textbox" aria-label="Probe rich" tabindex="0"></div>
+<button id="counter">Probe counter</button>
+<label><input type="checkbox" id="check">Probe checkbox</label>
+<script>
+let clicks=0;
+const text=document.getElementById('text'),rich=document.getElementById('rich'),check=document.getElementById('check');
+document.getElementById('counter').onclick=()=>{clicks++; publish()};
+function publish(){fetch('/state',{method:'POST',body:JSON.stringify({text:text.value,selected:text.value.slice(text.selectionStart,text.selectionEnd),clicks,checked:check.checked,rich:rich.innerText,html:rich.innerHTML,bold:!!rich.querySelector('b,strong,[style*="bold"],[style*="700"]')})}).catch(()=>{})}
+document.addEventListener('input',publish);document.addEventListener('change',publish);document.addEventListener('selectionchange',publish);setInterval(publish,100);
+</script>

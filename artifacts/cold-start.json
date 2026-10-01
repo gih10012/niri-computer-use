@@ -1,0 +1,90 @@
+{
+  "passed": true,
+  "reboot_performed": false,
+  "rounds": [
+    {
+      "round": 1,
+      "passed": true,
+      "capabilities": {
+        "input": [
+          "niri_virtual_pointer",
+          "uinput_keyboard",
+          "wtype"
+        ],
+        "screenshot": [
+          "grim"
+        ],
+        "window_control": [
+          "niri"
+        ],
+        "accessibility": [
+          "at_spi"
+        ],
+        "isolation": [
+          "shared"
+        ],
+        "preferred": {
+          "input": "niri_virtual_pointer",
+          "screenshot": "grim",
+          "window_control": "niri"
+        }
+      }
+    },
+    {
+      "round": 2,
+      "passed": true,
+      "capabilities": {
+        "input": [
+          "niri_virtual_pointer",
+          "uinput_keyboard",
+          "wtype"
+        ],
+        "screenshot": [
+          "grim"
+        ],
+        "window_control": [
+          "niri"
+        ],
+        "accessibility": [
+          "at_spi"
+        ],
+        "isolation": [
+          "shared"
+        ],
+        "preferred": {
+          "input": "niri_virtual_pointer",
+          "screenshot": "grim",
+          "window_control": "niri"
+        }
+      }
+    },
+    {
+      "round": 3,
+      "passed": true,
+      "capabilities": {
+        "input": [
+          "niri_virtual_pointer",
+          "uinput_keyboard",
+          "wtype"
+        ],
+        "screenshot": [
+          "grim"
+        ],
+        "window_control": [
+          "niri"
+        ],
+        "accessibility": [
+          "at_spi"
+        ],
+        "isolation": [
+          "shared"
+        ],
+        "preferred": {
+          "input": "niri_virtual_pointer",
+          "screenshot": "grim",
+          "window_control": "niri"
+        }
+      }
+    }
+  ]
+}

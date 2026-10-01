@@ -573,6 +573,61 @@ async fn perform_action_inner(
     })
 }
 
+pub(crate) async fn focus_element(object_ref_id: &str) -> Result<()> {
+    let conn = connect().await?;
+    let object_ref = object_ref_from_id(object_ref_id)?;
+    let proxy = open_accessible(&conn, &object_ref).await?;
+    let proxies = proxy.proxies().await?;
+    let component = proxies
+        .component()
+        .await
+        .context("element has no AT-SPI Component interface")?;
+    if !component.grab_focus().await? {
+        return Err(anyhow!("AT-SPI Component rejected focus"));
+    }
+    for _ in 0..10 {
+        if proxy.get_state().await?.contains(atspi::State::Focused) {
+            return Ok(());
+        }
+        tokio::time::sleep(Duration::from_millis(50)).await;
+    }
+    Err(anyhow!("element focus verification failed"))
+}
+
+pub(crate) async fn select_element_text(object_ref_id: &str, start: i32, end: i32) -> Result<()> {
+    let conn = connect().await?;
+    let object_ref = object_ref_from_id(object_ref_id)?;
+    let proxy = open_accessible(&conn, &object_ref).await?;
+    let proxies = proxy.proxies().await?;
+    let text = proxies
+        .text()
+        .await
+        .context("element has no AT-SPI Text interface")?;
+    let count = text.character_count().await?;
+    if start < 0 || end < start || end > count {
+        return Err(anyhow!(
+            "selection must satisfy 0 <= start <= end <= {count}; offsets count Unicode characters"
+        ));
+    }
+    // atspi-proxies 0.13 generates GetNselections (wrong capitalization).
+    let selections: i32 = text.inner().call("GetNSelections", &()).await?;
+    let ok = if selections > 0 {
+        text.set_selection(0, start, end).await?
+    } else {
+        text.add_selection(start, end).await?
+    };
+    if !ok {
+        return Err(anyhow!("AT-SPI Text rejected selection"));
+    }
+    for _ in 0..10 {
+        if text.get_selection(0).await? == (start, end) {
+            return Ok(());
+        }
+        tokio::time::sleep(Duration::from_millis(50)).await;
+    }
+    Err(anyhow!("selection verification failed"))
+}
+
 pub async fn set_element_value(object_ref_id: &str, value: &str) -> Result<ValueSetInvocation> {
     let conn = connect().await?;
     let object_ref = object_ref_from_id(object_ref_id)?;
@@ -601,7 +656,17 @@ pub async fn set_element_value(object_ref_id: &str, value: &str) -> Result<Value
             .await
             .context("failed to set AT-SPI editable text contents")?;
         if ok {
-            return Ok(ValueSetInvocation::EditableText);
+            let text = proxies
+                .text()
+                .await
+                .context("cannot verify editable text contents")?;
+            for _ in 0..10 {
+                if text.get_text(0, -1).await? == value {
+                    return Ok(ValueSetInvocation::EditableText);
+                }
+                tokio::time::sleep(Duration::from_millis(50)).await;
+            }
+            return Err(anyhow!("AT-SPI EditableText accepted the call but contents verification failed; use focused keyboard replacement"));
         }
         return Err(anyhow!("AT-SPI EditableText rejected the new contents"));
     }
@@ -958,8 +1023,9 @@ async fn text_from_proxies(
     } else {
         None
     };
-    let selection_count = text
-        .get_nselections()
+    let selection_count: i32 = text
+        .inner()
+        .call::<_, _, i32>("GetNSelections", &())
         .await
         .unwrap_or_default()
         .clamp(0, MAX_TEXT_SELECTIONS);

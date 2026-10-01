@@ -41,3 +41,6 @@ __pycache__/
 
 # Agent docs
 .agent-docs
+
+# Failed exploratory runs are retained locally, not shipped as acceptance.
+/artifacts/history/

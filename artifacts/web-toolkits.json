@@ -1,0 +1,393 @@
+{
+  "rounds": 3,
+  "cases": [
+    {
+      "name": "electron/r1/focus",
+      "passed": true,
+      "seconds": 0.2
+    },
+    {
+      "name": "electron/r1/scoped-accessibility",
+      "passed": true,
+      "seconds": 0.635
+    },
+    {
+      "name": "electron/r1/unicode-replacement",
+      "passed": true,
+      "seconds": 1.778
+    },
+    {
+      "name": "electron/r1/text-selection",
+      "passed": true,
+      "seconds": 0.427
+    },
+    {
+      "name": "electron/r1/unicode-typing",
+      "passed": true,
+      "seconds": 0.681
+    },
+    {
+      "name": "electron/r1/plain-paste",
+      "passed": true,
+      "seconds": 1.438
+    },
+    {
+      "name": "electron/r1/semantic-click",
+      "passed": true,
+      "seconds": 0.52
+    },
+    {
+      "name": "electron/r1/checkbox",
+      "passed": true,
+      "seconds": 0.455
+    },
+    {
+      "name": "electron/r1/rich-paste",
+      "passed": true,
+      "seconds": 1.61
+    },
+    {
+      "name": "electron/r1/screenshot",
+      "passed": true,
+      "seconds": 0.0
+    },
+    {
+      "name": "electron/r2/focus",
+      "passed": true,
+      "seconds": 0.193
+    },
+    {
+      "name": "electron/r2/scoped-accessibility",
+      "passed": true,
+      "seconds": 0.361
+    },
+    {
+      "name": "electron/r2/unicode-replacement",
+      "passed": true,
+      "seconds": 1.473
+    },
+    {
+      "name": "electron/r2/text-selection",
+      "passed": true,
+      "seconds": 0.417
+    },
+    {
+      "name": "electron/r2/unicode-typing",
+      "passed": true,
+      "seconds": 0.659
+    },
+    {
+      "name": "electron/r2/plain-paste",
+      "passed": true,
+      "seconds": 1.401
+    },
+    {
+      "name": "electron/r2/semantic-click",
+      "passed": true,
+      "seconds": 0.409
+    },
+    {
+      "name": "electron/r2/checkbox",
+      "passed": true,
+      "seconds": 0.477
+    },
+    {
+      "name": "electron/r2/rich-paste",
+      "passed": true,
+      "seconds": 1.569
+    },
+    {
+      "name": "electron/r2/screenshot",
+      "passed": true,
+      "seconds": 0.0
+    },
+    {
+      "name": "electron/r3/focus",
+      "passed": true,
+      "seconds": 0.211
+    },
+    {
+      "name": "electron/r3/scoped-accessibility",
+      "passed": true,
+      "seconds": 0.423
+    },
+    {
+      "name": "electron/r3/unicode-replacement",
+      "passed": true,
+      "seconds": 1.457
+    },
+    {
+      "name": "electron/r3/text-selection",
+      "passed": true,
+      "seconds": 0.422
+    },
+    {
+      "name": "electron/r3/unicode-typing",
+      "passed": true,
+      "seconds": 0.736
+    },
+    {
+      "name": "electron/r3/plain-paste",
+      "passed": true,
+      "seconds": 1.409
+    },
+    {
+      "name": "electron/r3/semantic-click",
+      "passed": true,
+      "seconds": 0.465
+    },
+    {
+      "name": "electron/r3/checkbox",
+      "passed": true,
+      "seconds": 0.482
+    },
+    {
+      "name": "electron/r3/rich-paste",
+      "passed": true,
+      "seconds": 1.563
+    },
+    {
+      "name": "electron/r3/screenshot",
+      "passed": true,
+      "seconds": 0.0
+    },
+    {
+      "name": "firefox/r1/focus",
+      "passed": true,
+      "seconds": 0.167
+    },
+    {
+      "name": "firefox/r1/scoped-accessibility",
+      "passed": true,
+      "seconds": 0.452
+    },
+    {
+      "name": "firefox/r1/unicode-replacement",
+      "passed": true,
+      "seconds": 2.262
+    },
+    {
+      "name": "firefox/r1/text-selection",
+      "passed": true,
+      "seconds": 0.54
+    },
+    {
+      "name": "firefox/r1/unicode-typing",
+      "passed": true,
+      "seconds": 0.705
+    },
+    {
+      "name": "firefox/r1/plain-paste",
+      "passed": true,
+      "seconds": 1.35
+    },
+    {
+      "name": "firefox/r1/semantic-click",
+      "passed": true,
+      "seconds": 1.887
+    },
+    {
+      "name": "firefox/r1/checkbox",
+      "passed": true,
+      "seconds": 1.955
+    },
+    {
+      "name": "firefox/r1/rich-paste",
+      "passed": true,
+      "seconds": 2.864
+    },
+    {
+      "name": "firefox/r1/screenshot",
+      "passed": true,
+      "seconds": 0.0
+    },
+    {
+      "name": "firefox/r2/focus",
+      "passed": true,
+      "seconds": 0.166
+    },
+    {
+      "name": "firefox/r2/scoped-accessibility",
+      "passed": true,
+      "seconds": 0.459
+    },
+    {
+      "name": "firefox/r2/unicode-replacement",
+      "passed": true,
+      "seconds": 2.182
+    },
+    {
+      "name": "firefox/r2/text-selection",
+      "passed": true,
+      "seconds": 1.627
+    },
+    {
+      "name": "firefox/r2/unicode-typing",
+      "passed": true,
+      "seconds": 0.694
+    },
+    {
+      "name": "firefox/r2/plain-paste",
+      "passed": true,
+      "seconds": 1.346
+    },
+    {
+      "name": "firefox/r2/semantic-click",
+      "passed": true,
+      "seconds": 1.676
+    },
+    {
+      "name": "firefox/r2/checkbox",
+      "passed": true,
+      "seconds": 1.485
+    },
+    {
+      "name": "firefox/r2/rich-paste",
+      "passed": true,
+      "seconds": 2.7
+    },
+    {
+      "name": "firefox/r2/screenshot",
+      "passed": true,
+      "seconds": 0.0
+    },
+    {
+      "name": "firefox/r3/focus",
+      "passed": true,
+      "seconds": 0.167
+    },
+    {
+      "name": "firefox/r3/scoped-accessibility",
+      "passed": true,
+      "seconds": 0.399
+    },
+    {
+      "name": "firefox/r3/unicode-replacement",
+      "passed": true,
+      "seconds": 2.174
+    },
+    {
+      "name": "firefox/r3/text-selection",
+      "passed": true,
+      "seconds": 1.792
+    },
+    {
+      "name": "firefox/r3/unicode-typing",
+      "passed": true,
+      "seconds": 0.544
+    },
+    {
+      "name": "firefox/r3/plain-paste",
+      "passed": true,
+      "seconds": 1.274
+    },
+    {
+      "name": "firefox/r3/semantic-click",
+      "passed": true,
+      "seconds": 1.491
+    },
+    {
+      "name": "firefox/r3/checkbox",
+      "passed": true,
+      "seconds": 1.641
+    },
+    {
+      "name": "firefox/r3/rich-paste",
+      "passed": true,
+      "seconds": 2.7
+    },
+    {
+      "name": "firefox/r3/screenshot",
+      "passed": true,
+      "seconds": 0.0
+    }
+  ],
+  "capabilities": [
+    {
+      "toolkit": "electron",
+      "round": 1,
+      "interface": "set_value",
+      "verified": false,
+      "error": "element does not expose AT-SPI Value or EditableText interfaces"
+    },
+    {
+      "toolkit": "electron",
+      "round": 1,
+      "interface": "select_text",
+      "verified": true,
+      "error": null
+    },
+    {
+      "toolkit": "electron",
+      "round": 2,
+      "interface": "set_value",
+      "verified": false,
+      "error": "element does not expose AT-SPI Value or EditableText interfaces"
+    },
+    {
+      "toolkit": "electron",
+      "round": 2,
+      "interface": "select_text",
+      "verified": true,
+      "error": null
+    },
+    {
+      "toolkit": "electron",
+      "round": 3,
+      "interface": "set_value",
+      "verified": false,
+      "error": "element does not expose AT-SPI Value or EditableText interfaces"
+    },
+    {
+      "toolkit": "electron",
+      "round": 3,
+      "interface": "select_text",
+      "verified": true,
+      "error": null
+    },
+    {
+      "toolkit": "firefox",
+      "round": 1,
+      "interface": "set_value",
+      "verified": false,
+      "error": "AT-SPI EditableText accepted the call but contents verification failed; use focused keyboard replacement"
+    },
+    {
+      "toolkit": "firefox",
+      "round": 1,
+      "interface": "select_text",
+      "verified": true,
+      "error": null
+    },
+    {
+      "toolkit": "firefox",
+      "round": 2,
+      "interface": "set_value",
+      "verified": false,
+      "error": "AT-SPI EditableText accepted the call but contents verification failed; use focused keyboard replacement"
+    },
+    {
+      "toolkit": "firefox",
+      "round": 2,
+      "interface": "select_text",
+      "verified": true,
+      "error": null
+    },
+    {
+      "toolkit": "firefox",
+      "round": 3,
+      "interface": "set_value",
+      "verified": false,
+      "error": "AT-SPI EditableText accepted the call but contents verification failed; use focused keyboard replacement"
+    },
+    {
+      "toolkit": "firefox",
+      "round": 3,
+      "interface": "select_text",
+      "verified": true,
+      "error": null
+    }
+  ],
+  "passed": true,
+  "mac_hardware_tested": false
+}

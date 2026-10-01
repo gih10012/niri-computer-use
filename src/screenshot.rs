@@ -145,11 +145,12 @@ impl ScreenshotPayloadOptions {
 }
 
 /// Environment variable forcing a single capture backend, skipping the
-/// fallback chain. Accepts `gnome-shell`, `portal`, `x11`, or `gnome-screenshot`.
+/// fallback chain. Accepts `grim`, `gnome-shell`, `portal`, `x11`, or `gnome-screenshot`.
 const SCREENSHOT_BACKEND_ENV: &str = "COMPUTER_USE_LINUX_SCREENSHOT_BACKEND";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum ScreenshotBackend {
+    Grim,
     GnomeShell,
     Portal,
     X11,
@@ -159,6 +160,7 @@ enum ScreenshotBackend {
 impl ScreenshotBackend {
     fn parse(value: &str) -> Option<Self> {
         match value.trim().to_ascii_lowercase().as_str() {
+            "grim" => Some(Self::Grim),
             "gnome-shell" | "gnome_shell" | "shell" => Some(Self::GnomeShell),
             "portal" | "xdg-portal" | "xdg_portal" => Some(Self::Portal),
             "x11" | "x11-native" | "x11_native" | "xgetimage" => Some(Self::X11),
@@ -169,6 +171,7 @@ impl ScreenshotBackend {
 
     async fn capture(self) -> Result<RawScreenshotCapture> {
         match self {
+            Self::Grim => capture_with_grim().await,
             Self::GnomeShell => capture_with_gnome_shell().await,
             Self::Portal => capture_with_portal().await,
             Self::X11 => capture_with_x11().await,
@@ -185,6 +188,16 @@ pub async fn capture_screenshot_raw() -> Result<RawScreenshotCapture> {
     // blocked, and aids debugging.
     if let Some(forced) = forced_backend()? {
         return forced.capture().await;
+    }
+    if std::env::var("XDG_CURRENT_DESKTOP")
+        .is_ok_and(|desktop| desktop.split(':').any(|d| d.eq_ignore_ascii_case("niri")))
+    {
+        // niri 26.04's GNOME Screenshot shim allocates integer-scaled pixels
+        // while its render elements retain fractional scale. That image cannot
+        // be used as normalized pointer space. Capture actual output pixels.
+        return capture_with_grim().await.context(
+            "niri requires grim/wlr-screencopy for accurate screenshot coordinates; install grim",
+        );
     }
 
     // The Shell and portal DBus paths fail for background processes (systemd
@@ -219,6 +232,30 @@ pub async fn capture_screenshot_raw() -> Result<RawScreenshotCapture> {
          native X11 screenshot failed: {x11_error}; \
          gnome-screenshot fallback failed: {cli_error}"
     ))
+}
+
+async fn capture_with_grim() -> Result<RawScreenshotCapture> {
+    let path = temp_png_path("grim");
+    let mut command = Command::new("grim");
+    command.arg(&path);
+    let result = crate::command_runner::output_with_timeout(
+        command,
+        "grim screenshot",
+        Duration::from_secs(10),
+    )
+    .await;
+    match result {
+        Ok(output) if output.status.success() => {
+            read_png_as_capture(path.clone(), "grim", ScreenshotCleanup::DeletePath(path)).await
+        }
+        result => {
+            let _ = fs::remove_file(&path);
+            match result {
+                Ok(output) => bail!("grim failed: {}", String::from_utf8_lossy(&output.stderr)),
+                Err(error) => Err(error),
+            }
+        }
+    }
 }
 
 /// `GetImage` on the root window of a native X11 session. Pixels are device
@@ -258,7 +295,7 @@ fn forced_backend() -> Result<Option<ScreenshotBackend>> {
             ScreenshotBackend::parse(&value).map(Some).ok_or_else(|| {
                 anyhow!(
                     "{SCREENSHOT_BACKEND_ENV}={value:?} is not a recognized backend \
-                     (expected gnome-shell, portal, x11, or gnome-screenshot)"
+                     (expected grim, gnome-shell, portal, x11, or gnome-screenshot)"
                 )
             })
         }

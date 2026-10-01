@@ -1,0 +1,323 @@
+{
+  "rounds": 3,
+  "cases": [
+    {
+      "name": "r1/window-focus",
+      "passed": true,
+      "seconds": 0.144
+    },
+    {
+      "name": "r1/scoped-tree",
+      "passed": true,
+      "seconds": 0.599
+    },
+    {
+      "name": "r1/editable-value",
+      "passed": true,
+      "seconds": 0.32
+    },
+    {
+      "name": "r1/unicode-value",
+      "passed": true,
+      "seconds": 0.333
+    },
+    {
+      "name": "r1/text-selection",
+      "passed": true,
+      "seconds": 0.421
+    },
+    {
+      "name": "r1/unicode-typing",
+      "passed": true,
+      "seconds": 0.915
+    },
+    {
+      "name": "r1/key-chord",
+      "passed": true,
+      "seconds": 0.291
+    },
+    {
+      "name": "r1/plain-paste",
+      "passed": true,
+      "seconds": 1.097
+    },
+    {
+      "name": "r1/clipboard-restored",
+      "passed": true,
+      "seconds": 0.057
+    },
+    {
+      "name": "r1/rich-paste",
+      "passed": true,
+      "seconds": 1.333
+    },
+    {
+      "name": "r1/secondary-entry",
+      "passed": true,
+      "seconds": 0.761
+    },
+    {
+      "name": "r1/semantic-click",
+      "passed": true,
+      "seconds": 0.331
+    },
+    {
+      "name": "r1/checkbox",
+      "passed": true,
+      "seconds": 0.449
+    },
+    {
+      "name": "r1/numeric-value",
+      "passed": true,
+      "seconds": 0.389
+    },
+    {
+      "name": "r1/desktop-screenshot",
+      "passed": true,
+      "seconds": 0.0
+    },
+    {
+      "name": "r1/absolute-click-calibration",
+      "passed": true,
+      "seconds": 0.441
+    },
+    {
+      "name": "r1/right-click",
+      "passed": true,
+      "seconds": 0.439
+    },
+    {
+      "name": "r1/drag",
+      "passed": true,
+      "seconds": 0.955
+    },
+    {
+      "name": "r1/scroll",
+      "passed": true,
+      "seconds": 0.436
+    },
+    {
+      "name": "r1/verify-state-after-actions",
+      "passed": true,
+      "seconds": 0.32
+    },
+    {
+      "name": "r1/desktop-app-discovery",
+      "passed": true,
+      "seconds": 0.019
+    },
+    {
+      "name": "r2/window-focus",
+      "passed": true,
+      "seconds": 0.15
+    },
+    {
+      "name": "r2/scoped-tree",
+      "passed": true,
+      "seconds": 0.258
+    },
+    {
+      "name": "r2/editable-value",
+      "passed": true,
+      "seconds": 0.3
+    },
+    {
+      "name": "r2/unicode-value",
+      "passed": true,
+      "seconds": 0.41
+    },
+    {
+      "name": "r2/text-selection",
+      "passed": true,
+      "seconds": 0.384
+    },
+    {
+      "name": "r2/unicode-typing",
+      "passed": true,
+      "seconds": 0.685
+    },
+    {
+      "name": "r2/key-chord",
+      "passed": true,
+      "seconds": 0.296
+    },
+    {
+      "name": "r2/plain-paste",
+      "passed": true,
+      "seconds": 1.02
+    },
+    {
+      "name": "r2/clipboard-restored",
+      "passed": true,
+      "seconds": 0.046
+    },
+    {
+      "name": "r2/rich-paste",
+      "passed": true,
+      "seconds": 1.35
+    },
+    {
+      "name": "r2/secondary-entry",
+      "passed": true,
+      "seconds": 0.731
+    },
+    {
+      "name": "r2/semantic-click",
+      "passed": true,
+      "seconds": 0.314
+    },
+    {
+      "name": "r2/checkbox",
+      "passed": true,
+      "seconds": 0.417
+    },
+    {
+      "name": "r2/numeric-value",
+      "passed": true,
+      "seconds": 0.214
+    },
+    {
+      "name": "r2/desktop-screenshot",
+      "passed": true,
+      "seconds": 0.0
+    },
+    {
+      "name": "r2/absolute-click-calibration",
+      "passed": true,
+      "seconds": 0.392
+    },
+    {
+      "name": "r2/right-click",
+      "passed": true,
+      "seconds": 0.44
+    },
+    {
+      "name": "r2/drag",
+      "passed": true,
+      "seconds": 0.945
+    },
+    {
+      "name": "r2/scroll",
+      "passed": true,
+      "seconds": 0.436
+    },
+    {
+      "name": "r2/verify-state-after-actions",
+      "passed": true,
+      "seconds": 0.347
+    },
+    {
+      "name": "r2/desktop-app-discovery",
+      "passed": true,
+      "seconds": 0.026
+    },
+    {
+      "name": "r3/window-focus",
+      "passed": true,
+      "seconds": 0.205
+    },
+    {
+      "name": "r3/scoped-tree",
+      "passed": true,
+      "seconds": 0.275
+    },
+    {
+      "name": "r3/editable-value",
+      "passed": true,
+      "seconds": 0.327
+    },
+    {
+      "name": "r3/unicode-value",
+      "passed": true,
+      "seconds": 0.417
+    },
+    {
+      "name": "r3/text-selection",
+      "passed": true,
+      "seconds": 0.4
+    },
+    {
+      "name": "r3/unicode-typing",
+      "passed": true,
+      "seconds": 0.675
+    },
+    {
+      "name": "r3/key-chord",
+      "passed": true,
+      "seconds": 0.273
+    },
+    {
+      "name": "r3/plain-paste",
+      "passed": true,
+      "seconds": 1.088
+    },
+    {
+      "name": "r3/clipboard-restored",
+      "passed": true,
+      "seconds": 0.045
+    },
+    {
+      "name": "r3/rich-paste",
+      "passed": true,
+      "seconds": 1.351
+    },
+    {
+      "name": "r3/secondary-entry",
+      "passed": true,
+      "seconds": 0.91
+    },
+    {
+      "name": "r3/semantic-click",
+      "passed": true,
+      "seconds": 0.255
+    },
+    {
+      "name": "r3/checkbox",
+      "passed": true,
+      "seconds": 0.376
+    },
+    {
+      "name": "r3/numeric-value",
+      "passed": true,
+      "seconds": 0.2
+    },
+    {
+      "name": "r3/desktop-screenshot",
+      "passed": true,
+      "seconds": 0.0
+    },
+    {
+      "name": "r3/absolute-click-calibration",
+      "passed": true,
+      "seconds": 0.405
+    },
+    {
+      "name": "r3/right-click",
+      "passed": true,
+      "seconds": 0.417
+    },
+    {
+      "name": "r3/drag",
+      "passed": true,
+      "seconds": 0.925
+    },
+    {
+      "name": "r3/scroll",
+      "passed": true,
+      "seconds": 0.415
+    },
+    {
+      "name": "r3/verify-state-after-actions",
+      "passed": true,
+      "seconds": 0.303
+    },
+    {
+      "name": "r3/desktop-app-discovery",
+      "passed": true,
+      "seconds": 0.025
+    }
+  ],
+  "desktop": "niri",
+  "mac_hardware_tested": false,
+  "passed": true
+}

@@ -1,8 +1,9 @@
 use crate::atspi_tree::{
-    focused_element_summary_in_app, list_accessible_apps, object_ref_owner_pid,
-    perform_action as invoke_accessibility_action, perform_named_action, probe_focused_element,
-    set_element_value, snapshot_accessibility_tree, AccessibilityAction, AccessibilityNode,
-    AccessibleAppSummary, Bounds, FocusProbe, FocusedElementSummary, ValueSetInvocation,
+    focus_element as focus_accessible_element, focused_element_summary_in_app,
+    list_accessible_apps, object_ref_owner_pid, perform_action as invoke_accessibility_action,
+    perform_named_action, probe_focused_element, select_element_text, set_element_value,
+    snapshot_accessibility_tree, AccessibilityAction, AccessibilityNode, AccessibleAppSummary,
+    Bounds, FocusProbe, FocusedElementSummary, ValueSetInvocation,
 };
 use crate::diagnostics::{doctor_report, setup_accessibility_report, DoctorReport, SetupReport};
 use crate::gnome_extension::{setup_window_targeting_report, WindowTargetingSetupReport};
@@ -77,6 +78,7 @@ pub struct ComputerUseLinux {
     portal_keyboard_session: Arc<Mutex<Option<PortalKeyboardSession>>>,
     /// Lazily-created uinput absolute pointer (preferred coordinate backend).
     abs_pointer: Arc<Mutex<Option<crate::abs_pointer::AbsPointer>>>,
+    native_keyboard: Arc<Mutex<Option<crate::keyboard::Keyboard>>>,
     portal_session_init_lock: Arc<tokio::sync::Mutex<()>>,
     input_operation_lock: Arc<tokio::sync::Mutex<()>>,
     kde_clipboard_lock: Arc<tokio::sync::Mutex<()>>,
@@ -144,6 +146,226 @@ impl ComputerUseLinux {
 
 #[tool_router]
 impl ComputerUseLinux {
+    #[tool(
+        name = "list_desktop_apps",
+        description = "List launchable XDG desktop applications, including apps that are not running. Use desktop_id with launch_app.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = false
+        )
+    )]
+    async fn list_desktop_apps(&self) -> Json<DesktopAppsOutput> {
+        Json(DesktopAppsOutput {
+            apps: crate::desktop_apps::list(),
+        })
+    }
+
+    #[tool(
+        name = "launch_app",
+        description = "Launch an installed application by desktop_id (from list_desktop_apps), wait for and focus its niri window. Optional app_id overrides the matching window app id.",
+        annotations(
+            read_only_hint = false,
+            destructive_hint = false,
+            idempotent_hint = false,
+            open_world_hint = true
+        )
+    )]
+    async fn launch_app(
+        &self,
+        Parameters(params): Parameters<LaunchAppParams>,
+    ) -> Json<LaunchAppOutput> {
+        let guard = Arc::clone(&self.input_operation_lock).lock_owned().await;
+        let this = self.clone();
+        let task = async move {
+            let app = crate::desktop_apps::list()
+                .into_iter()
+                .find(|app| app.desktop_id == params.desktop_id || app.app_id == params.desktop_id)
+                .ok_or_else(|| "unknown desktop_id; use list_desktop_apps".to_string())?;
+            let mut launched = false;
+            let id = params.app_id.as_deref().unwrap_or(&app.app_id);
+            let wait = params.wait_timeout_ms.unwrap_or(10000).clamp(100, 30000);
+            let deadline = tokio::time::Instant::now() + Duration::from_millis(wait);
+            loop {
+                if let Ok(windows) = list_windows().await {
+                    let matching: Vec<_> = windows
+                        .into_iter()
+                        .filter(|w| {
+                            w.app_id.as_deref() == Some(id)
+                                || w.wm_class.as_deref() == Some(id)
+                                || app.startup_wm_class.as_deref().is_some_and(|class| {
+                                    w.app_id.as_deref() == Some(class)
+                                        || w.wm_class.as_deref() == Some(class)
+                                })
+                        })
+                        .collect();
+                    if matching.len() > 1 {
+                        return Err("application has multiple windows; choose an exact window_id using list_windows".to_string());
+                    }
+                    if let Some(window) = matching.first() {
+                        this.focus_target_for_input(&WindowTarget {
+                            window_id: Some(window.window_id),
+                            ..Default::default()
+                        })
+                        .await?;
+                        return Ok(window.clone());
+                    }
+                }
+                if !launched {
+                    crate::desktop_apps::launch(&params.desktop_id)
+                        .await
+                        .map_err(|e| e.to_string())?;
+                    launched = true;
+                }
+                if tokio::time::Instant::now() >= deadline {
+                    return Err("application launched but no matching window appeared; use list_windows and provide app_id".to_string());
+                }
+                sleep(Duration::from_millis(100)).await;
+            }
+        };
+        let (_guard, result) = run_cancellation_safe_input(guard, task).await;
+        Json(match result {
+            Ok(window) => LaunchAppOutput {
+                ok: true,
+                message: "Application launched and window focus verified.".into(),
+                window: Some(window),
+            },
+            Err(message) => LaunchAppOutput {
+                ok: false,
+                message,
+                window: None,
+            },
+        })
+    }
+
+    #[tool(
+        name = "focus_element",
+        description = "Focus an accessible element from the latest get_app_state using AT-SPI Component and verify its Focused state.",
+        annotations(
+            read_only_hint = false,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = false
+        )
+    )]
+    async fn focus_element(
+        &self,
+        Parameters(params): Parameters<ActionParams>,
+    ) -> Json<ActionOutput> {
+        let _guard = self.input_operation_lock.lock().await;
+        let result = match self.resolve_object_ref(
+            params.element_index,
+            params.element_identifier.as_deref(),
+            &params.selector(),
+            ElementResolvePurpose::Focus,
+        ) {
+            Ok(object_ref) => focus_accessible_element(&object_ref)
+                .await
+                .map_err(|e| e.to_string()),
+            Err(message) => Err(message),
+        };
+        Json(ActionOutput {
+            ok: result.is_ok(),
+            implemented: true,
+            action: "focus_element".into(),
+            message: result
+                .err()
+                .unwrap_or_else(|| "AT-SPI focus verified.".into()),
+            received: Some(serde_json::json!(params)),
+        })
+    }
+
+    #[tool(
+        name = "select_text",
+        description = "Select a range in an AT-SPI Text element from the latest get_app_state. start_offset/end_offset count Unicode characters, not bytes. Verifies the resulting selection.",
+        annotations(
+            read_only_hint = false,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = false
+        )
+    )]
+    async fn select_text(
+        &self,
+        Parameters(params): Parameters<SelectTextParams>,
+    ) -> Json<ActionOutput> {
+        let _guard = self.input_operation_lock.lock().await;
+        let result = match self.resolve_object_ref(
+            params.element_index,
+            params.element_identifier.as_deref(),
+            &params.selector(),
+            ElementResolvePurpose::SelectText,
+        ) {
+            Ok(object_ref) => {
+                select_element_text(&object_ref, params.start_offset, params.end_offset)
+                    .await
+                    .map_err(|e| e.to_string())
+            }
+            Err(message) => Err(message),
+        };
+        Json(ActionOutput {
+            ok: result.is_ok(),
+            implemented: true,
+            action: "select_text".into(),
+            message: result
+                .err()
+                .unwrap_or_else(|| "AT-SPI selection verified.".into()),
+            received: Some(serde_json::json!(params)),
+        })
+    }
+
+    #[tool(
+        name = "paste",
+        description = "Paste plain text and optional HTML into a freshly verified target window. Snapshots and restores all clipboard formats (up to 16 MiB); refuses to overwrite unreadable clipboard data. Uses Wayland data-control and a persistent uinput keyboard on niri. Waits for the configured delay before restoring the clipboard; verify the destination contents.",
+        annotations(
+            read_only_hint = false,
+            destructive_hint = true,
+            idempotent_hint = false,
+            open_world_hint = true
+        )
+    )]
+    async fn paste(&self, Parameters(params): Parameters<PasteParams>) -> Json<ActionOutput> {
+        let received = Some(serde_json::json!(params));
+        let guard = Arc::clone(&self.input_operation_lock).lock_owned().await;
+        let this = self.clone();
+        let (_guard, result) = run_cancellation_safe_input(guard, async move {
+            let target = params.target.window_target();
+            if !target.has_target() { return Err("paste requires an explicit window/app target".into()); }
+            this.focus_target_for_input(&target).await?;
+            let previous = clipboard_helper("snapshot", None).await?;
+            let offers = clipboard_offers(&params.target.text, params.html.as_deref());
+            let offered = clipboard_helper("offer", Some(offers.to_string().into_bytes())).await;
+            let action = match offered {
+                Ok(_) => {
+                    match this.focus_target_for_input(&target).await {
+                        Ok(_) => {
+                            let key = params.key.as_deref().unwrap_or("Ctrl+V");
+                            let result = this.send_niri_key(key).await;
+                            sleep(Duration::from_millis(params.restore_delay_ms.unwrap_or(500).clamp(100, 5000))).await;
+                            result
+                        }
+                        Err(error) => Err(error),
+                    }
+                }
+                Err(error) => Err(error),
+            };
+            let restored = clipboard_helper("offer", Some(previous)).await;
+            match (action, restored) {
+                (Ok(()), Ok(_)) => Ok("Paste shortcut delivered; previous clipboard formats restored. Verify target contents with get_app_state.".to_string()),
+                (Err(error), Ok(_)) => Err(error),
+                (result, Err(error)) => Err(format!("{}; clipboard restoration failed: {error}", result.err().unwrap_or_else(|| "paste delivered".into()))),
+            }
+        }).await;
+        Json(ActionOutput {
+            ok: result.is_ok(),
+            implemented: true,
+            action: "paste".into(),
+            message: result.unwrap_or_else(|e| e),
+            received,
+        })
+    }
+
     #[tool(
         name = "complete_interaction",
         description = "Send a desktop notification that this agent has finished its interaction. Available only with COMPUTER_USE_LINUX_NOTIFY_ON_COMPLETE=1. This cue does not acquire or release an exclusive desktop lock. Delivery is best effort and bounded; it may be suppressed by desktop notification settings.",
@@ -376,7 +598,13 @@ impl ComputerUseLinux {
             let result: Result<ScreenshotCapture> = async {
                 let raw = capture_screenshot_raw().await?;
                 self.cache_desktop_size(raw.width, raw.height);
-                if let Some(window) = window_context.as_ref() {
+                if params.desktop_screenshot.unwrap_or(false) {
+                    let mut capture = prepare_screenshot_payload(raw, screenshot_options)?;
+                    capture
+                        .source
+                        .push_str(" (full desktop; coordinates are absolute)");
+                    Ok(capture)
+                } else if let Some(window) = window_context.as_ref() {
                     ensure_readonly_screenshot_target_is_visible(window)?;
                     let crop = self.window_crop_rect_for_capture(window, &raw).await?;
                     prepare_app_state_screenshot(
@@ -856,6 +1084,34 @@ impl ComputerUseLinux {
         let ClickTarget::Coordinates(x, y) = target else {
             unreachable!("click target must resolve to coordinates or an AT-SPI action");
         };
+        if env_contains("XDG_CURRENT_DESKTOP", "niri") {
+            let button = match params.button.as_deref().unwrap_or("left") {
+                "left" | "primary" => 0x110,
+                "right" | "secondary" => 0x111,
+                "middle" => 0x112,
+                _ => {
+                    return Json(ActionOutput {
+                        ok: false,
+                        implemented: true,
+                        action: "click".into(),
+                        message: "niri supports left/right/middle buttons".into(),
+                        received,
+                    })
+                }
+            };
+            let operation = crate::niri_pointer::Operation::Click {
+                x,
+                y,
+                button,
+                count: params.click_count.unwrap_or(1),
+            };
+            let this = self.clone();
+            let (_guard, result) = run_cancellation_safe_input(input_guard, async move {
+                this.send_niri_pointer(operation).await
+            })
+            .await;
+            return Json(native_pointer_action("click", result, received));
+        }
         let button = mouse_button_code(params.button.as_deref());
         let click_count = params.click_count.unwrap_or(1).clamp(1, 10).to_string();
         // Preferred backend: the uinput absolute pointer. Unlike ydotool's
@@ -1280,6 +1536,28 @@ impl ComputerUseLinux {
             Some((x, y)) => self.off_screen_note_for_point(x, y).await,
             None => None,
         };
+        if env_contains("XDG_CURRENT_DESKTOP", "niri") {
+            let (dx, dy) = match direction {
+                ScrollDirection::Up => (0, -units),
+                ScrollDirection::Down => (0, units),
+                ScrollDirection::Left => (-units, 0),
+                ScrollDirection::Right => (units, 0),
+            };
+            let operation = crate::niri_pointer::Operation::Scroll {
+                point: target_point,
+                dx,
+                dy,
+            };
+            let this = self.clone();
+            let (_guard, result) = run_cancellation_safe_input(input_guard, async move {
+                this.send_niri_pointer(operation).await
+            })
+            .await;
+            return Json(with_notes(
+                native_pointer_action("scroll", result, received),
+                off_screen_note,
+            ));
+        }
         if let Some(session) = self.cached_portal_pointer_session() {
             let mapped_target = match (portal_target_point, target_point) {
                 (Some(point), _) => Some(Some(point)),
@@ -1420,6 +1698,35 @@ impl ComputerUseLinux {
     async fn drag(&self, Parameters(params): Parameters<DragParams>) -> Json<ActionOutput> {
         let received = Some(serde_json::json!(params));
         let input_guard = Arc::clone(&self.input_operation_lock).lock_owned().await;
+        if let Some(window_id) = params.window_id {
+            if let Err(message) = self
+                .focus_target_for_input(&WindowTarget {
+                    window_id: Some(window_id),
+                    ..Default::default()
+                })
+                .await
+            {
+                return Json(ActionOutput {
+                    ok: false,
+                    implemented: true,
+                    action: "drag".into(),
+                    message,
+                    received,
+                });
+            }
+        }
+        if env_contains("XDG_CURRENT_DESKTOP", "niri") {
+            let operation = crate::niri_pointer::Operation::Drag {
+                start: (params.start_x, params.start_y),
+                end: (params.end_x, params.end_y),
+            };
+            let this = self.clone();
+            let (_guard, result) = run_cancellation_safe_input(input_guard, async move {
+                this.send_niri_pointer(operation).await
+            })
+            .await;
+            return Json(native_pointer_action("drag", result, received));
+        }
         // Preferred backend: the uinput absolute pointer (accurate landing).
         if self.ensure_abs_pointer().await {
             let abs_pointer = Arc::clone(&self.abs_pointer);
@@ -1561,6 +1868,40 @@ impl ComputerUseLinux {
                 received,
             });
         };
+        if env_contains("XDG_CURRENT_DESKTOP", "niri") {
+            let key = params.key.clone();
+            let this = self.clone();
+            let (input_guard, result) =
+                run_cancellation_safe_input(
+                    input_guard,
+                    async move { this.send_niri_key(&key).await },
+                )
+                .await;
+            let _input_guard = input_guard;
+            return Json(ActionOutput {
+                ok: result.is_ok(),
+                implemented: true,
+                action: "press_key".into(),
+                message: result.err().unwrap_or_else(|| {
+                    "Shortcut delivered through persistent uinput keyboard.".into()
+                }),
+                received,
+            });
+        }
+        if self.should_prefer_wtype_keyboard() {
+            let key = params.key.clone();
+            let (input_guard, result) = run_cancellation_safe_input(input_guard, async move {
+                run_wtype_key(&key).await.map(|output| vec![output])
+            })
+            .await;
+            let _input_guard = input_guard;
+            return Json(action_result_with_focus(
+                "press_key",
+                result,
+                received,
+                focus,
+            ));
+        }
         if self.should_prefer_portal_keyboard_for_chords().await {
             match self.ensure_portal_keyboard_session().await {
                 Ok(Some(session)) => {
@@ -2366,6 +2707,10 @@ struct AppCandidate {
 
 #[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
 struct GetAppStateParams {
+    /// Explicitly capture the whole desktop while keeping the tree app-scoped.
+    /// Use on niri when window positions are unavailable. Coordinates are absolute.
+    #[serde(default)]
+    desktop_screenshot: Option<bool>,
     /// App name or AT-SPI id that limits the accessibility tree. Omit only when
     /// you need the whole desktop tree; unscoped results can flood context.
     #[serde(default)]
@@ -2761,6 +3106,64 @@ struct SetValueParams {
     value: String,
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
+struct LaunchAppParams {
+    desktop_id: String,
+    #[serde(default)]
+    app_id: Option<String>,
+    #[serde(default)]
+    wait_timeout_ms: Option<u64>,
+}
+
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+struct DesktopAppsOutput {
+    apps: Vec<crate::desktop_apps::DesktopApp>,
+}
+
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+struct LaunchAppOutput {
+    ok: bool,
+    message: String,
+    window: Option<WindowInfo>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
+struct SelectTextParams {
+    #[serde(default)]
+    element_index: Option<u32>,
+    #[serde(default)]
+    element_identifier: Option<String>,
+    #[serde(default)]
+    role: Option<String>,
+    #[serde(default)]
+    name: Option<String>,
+    start_offset: i32,
+    end_offset: i32,
+}
+
+impl SelectTextParams {
+    fn selector(&self) -> ElementSelector<'_> {
+        ElementSelector {
+            role: self.role.as_deref(),
+            name: self.name.as_deref(),
+            ..Default::default()
+        }
+    }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
+struct PasteParams {
+    #[serde(flatten)]
+    target: TypeTextParams,
+    #[serde(default)]
+    html: Option<String>,
+    /// Paste shortcut; default Ctrl+V. Use Ctrl+Shift+V for terminals.
+    #[serde(default)]
+    key: Option<String>,
+    #[serde(default)]
+    restore_delay_ms: Option<u64>,
+}
+
 impl SetValueParams {
     fn selector(&self) -> ElementSelector<'_> {
         ElementSelector {
@@ -2830,6 +3233,8 @@ impl ScrollParams {
 
 #[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
 struct DragParams {
+    #[serde(default)]
+    window_id: Option<u64>,
     start_x: i32,
     start_y: i32,
     end_x: i32,
@@ -2928,6 +3333,50 @@ struct ActionOutput {
 }
 
 impl ComputerUseLinux {
+    async fn send_niri_pointer(
+        &self,
+        operation: crate::niri_pointer::Operation,
+    ) -> std::result::Result<(), String> {
+        let size = self.desktop_size.lock().ok().and_then(|size| *size);
+        let (width, height) = if let Some(size) = size {
+            size
+        } else {
+            let capture = capture_screenshot_raw().await.map_err(|e| e.to_string())?;
+            self.cache_desktop_size(capture.width, capture.height);
+            (capture.width, capture.height)
+        };
+        tokio::task::spawn_blocking(move || {
+            crate::niri_pointer::run(width, height, operation).map_err(|e| format!("{e:#}"))
+        })
+        .await
+        .map_err(|e| e.to_string())?
+    }
+    async fn send_niri_key(&self, key: &str) -> std::result::Result<(), String> {
+        if !env_contains("XDG_CURRENT_DESKTOP", "niri") {
+            return run_wtype_key(key).await.map(|_| ());
+        }
+        let (modifiers, key) = key_chord(key).ok_or_else(|| "unsupported key chord".to_string())?;
+        let keyboard = self.native_keyboard.clone();
+        tokio::task::spawn_blocking(move || {
+            let mut keyboard = keyboard
+                .lock()
+                .map_err(|_| "keyboard lock poisoned".to_string())?;
+            if keyboard.is_none() {
+                *keyboard = Some(
+                    crate::keyboard::Keyboard::create()
+                        .map_err(|e| format!("uinput keyboard unavailable: {e}"))?,
+                );
+            }
+            keyboard
+                .as_mut()
+                .unwrap()
+                .chord(&modifiers, key)
+                .map_err(|e| e.to_string())
+        })
+        .await
+        .map_err(|e| e.to_string())?
+    }
+
     fn is_wayland_session(&self) -> bool {
         crate::diagnostics::hydrate_session_bus_env();
         let session_type = env::var("XDG_SESSION_TYPE").ok();
@@ -3884,9 +4333,11 @@ enum ClickTarget {
 
 #[derive(Debug, Clone, Copy)]
 enum ElementResolvePurpose {
+    Focus,
     Click,
     Action,
     SetValue,
+    SelectText,
 }
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -4000,12 +4451,17 @@ fn node_matches_selector(node: &AccessibilityNode, selector: &ElementSelector<'_
 
 fn node_matches_resolve_purpose(node: &AccessibilityNode, purpose: ElementResolvePurpose) -> bool {
     match purpose {
+        ElementResolvePurpose::Focus => node
+            .states
+            .iter()
+            .any(|s| s.eq_ignore_ascii_case("focusable")),
         ElementResolvePurpose::Click => {
             node.bounds.as_ref().and_then(bounds_center).is_some()
                 || primary_action_name(&node.actions).is_some()
         }
         ElementResolvePurpose::Action => !node.actions.is_empty(),
         ElementResolvePurpose::SetValue => node.supports_editable_text || node.value.is_some(),
+        ElementResolvePurpose::SelectText => node.text.is_some(),
     }
 }
 
@@ -5561,6 +6017,109 @@ fn which_in_path(binary: &str) -> bool {
 /// Map our key grammar onto an `xdotool key` spec such as `ctrl+a`, `Return`,
 /// or `shift+F5`. Returns `None` for keys the grammar does not accept, so the
 /// caller keeps its existing "never silently dropped" error.
+fn native_pointer_action(
+    action: &str,
+    result: std::result::Result<(), String>,
+    received: Option<serde_json::Value>,
+) -> ActionOutput {
+    ActionOutput { ok: result.is_ok(), implemented: true, action: action.into(), message: result.err().unwrap_or_else(|| "Input delivered through niri Wayland virtual-pointer protocol; verify the resulting UI.".into()), received }
+}
+
+fn wtype_key_args(key: &str) -> Option<Vec<String>> {
+    let spec = xdotool_key_spec(key)?;
+    let parts: Vec<_> = spec.split('+').collect();
+    let (key, modifiers) = parts.split_last()?;
+    let modifiers: Vec<_> = modifiers
+        .iter()
+        .map(|m| if *m == "super" { "logo" } else { *m })
+        .collect();
+    let mut args = Vec::new();
+    for modifier in &modifiers {
+        args.extend(["-M".into(), (*modifier).into()]);
+    }
+    let keysym = match *key {
+        "ctrl" => "Control_L",
+        "alt" => "Alt_L",
+        "shift" => "Shift_L",
+        "super" => "Super_L",
+        key => key,
+    };
+    args.extend(["-k".into(), keysym.into()]);
+    // Keep the temporary virtual-keyboard keymap alive until toolkits have
+    // processed the key. GTK resolves shortcut hardware codes asynchronously.
+    args.extend(["-s".into(), "100".into()]);
+    for modifier in modifiers.iter().rev() {
+        args.extend(["-m".into(), (*modifier).into()]);
+    }
+    args.extend(["-s".into(), "50".into()]);
+    Some(args)
+}
+
+async fn run_wtype_key(key: &str) -> std::result::Result<Output, String> {
+    let args = wtype_key_args(key).ok_or_else(|| "unsupported key chord".to_string())?;
+    let mut command = TokioCommand::new("wtype");
+    command.args(args);
+    let output =
+        crate::command_runner::output_with_timeout(command, "wtype key", INPUT_COMMAND_TIMEOUT)
+            .await
+            .map_err(|e| e.to_string())?;
+    if !output.status.success() {
+        return Err(format!(
+            "wtype key failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        ));
+    }
+    Ok(output)
+}
+
+fn clipboard_offers(text: &str, html: Option<&str>) -> serde_json::Value {
+    use base64::{engine::general_purpose::STANDARD, Engine};
+    let mut offers = vec![
+        serde_json::json!({"mime": "text/plain;charset=utf-8", "data": STANDARD.encode(text)}),
+    ];
+    if let Some(html) = html {
+        offers.push(serde_json::json!({"mime": "text/html", "data": STANDARD.encode(html)}));
+    }
+    serde_json::Value::Array(offers)
+}
+
+async fn clipboard_helper(
+    operation: &str,
+    input: Option<Vec<u8>>,
+) -> std::result::Result<Vec<u8>, String> {
+    use tokio::io::AsyncWriteExt;
+    let path = env::current_exe()
+        .map_err(|e| e.to_string())?
+        .with_file_name("niri-clipboard");
+    let task = async {
+        let mut child = TokioCommand::new(path)
+            .arg(operation)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .kill_on_drop(true)
+            .spawn()
+            .map_err(|e| format!("start clipboard helper: {e}"))?;
+        if let Some(input) = input {
+            let mut stdin = child
+                .stdin
+                .take()
+                .ok_or_else(|| "clipboard stdin unavailable".to_string())?;
+            stdin.write_all(&input).await.map_err(|e| e.to_string())?;
+        } else {
+            drop(child.stdin.take());
+        }
+        let output = child.wait_with_output().await.map_err(|e| e.to_string())?;
+        if !output.status.success() {
+            return Err(String::from_utf8_lossy(&output.stderr).into_owned());
+        }
+        Ok(output.stdout)
+    };
+    timeout(Duration::from_secs(10), task)
+        .await
+        .map_err(|_| "clipboard operation timed out".to_string())?
+}
+
 fn xdotool_key_spec(key: &str) -> Option<String> {
     let parts = key
         .split('+')
