@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Verify installed-plugin discovery and a read-only call in Codex, without inference."""
 import json
+import argparse
 from pathlib import Path
 import queue
 import subprocess
@@ -11,6 +12,9 @@ import time
 ROOT = Path(__file__).resolve().parents[1]
 
 def main():
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--report',type=Path,default=ROOT/'artifacts/host.json')
+    args=parser.parse_args()
     report = {'passed': False, 'inference_started': False}
     with tempfile.TemporaryFile() as log:
         process = subprocess.Popen(['codex', 'app-server', '--stdio'], stdin=subprocess.PIPE,
@@ -69,6 +73,6 @@ def main():
                 log.seek(0)
                 for line in log.read().decode(errors='replace').splitlines():
                     if 'niri' in line.lower(): print(line,flush=True)
-            (ROOT/'artifacts/host.json').write_text(json.dumps(report,indent=2)+'\n')
+            args.report.write_text(json.dumps(report,indent=2)+'\n')
 
 if __name__ == '__main__': main()

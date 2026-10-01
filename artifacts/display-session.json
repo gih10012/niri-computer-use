@@ -1,0 +1,197 @@
+{
+  "passed": true,
+  "rounds": [
+    {
+      "begin": {
+        "ok": true,
+        "session": {
+          "entered_off": true,
+          "dimmed": true,
+          "brightness": {
+            "nvidia_wmi_ec_backlight": 100
+          },
+          "owner_pid": 0,
+          "owner_start": null
+        },
+        "power": {
+          "off": true,
+          "connectors": {
+            "card2-eDP-1": "disabled"
+          }
+        },
+        "brightness": {
+          "nvidia_wmi_ec_backlight": 1
+        }
+      },
+      "wake": {
+        "ok": true,
+        "session": {
+          "entered_off": true,
+          "dimmed": true,
+          "brightness": {
+            "nvidia_wmi_ec_backlight": 100
+          },
+          "owner_pid": 0,
+          "owner_start": null
+        },
+        "power": {
+          "off": false,
+          "connectors": {
+            "card2-eDP-1": "enabled"
+          }
+        },
+        "brightness": {
+          "nvidia_wmi_ec_backlight": 1
+        }
+      },
+      "end": {
+        "ok": true,
+        "restored": {
+          "power": {
+            "off": true,
+            "connectors": {
+              "card2-eDP-1": "disabled"
+            }
+          },
+          "brightness": {
+            "nvidia_wmi_ec_backlight": 100
+          }
+        },
+        "entered_off": true
+      }
+    },
+    {
+      "begin": {
+        "ok": true,
+        "session": {
+          "entered_off": true,
+          "dimmed": true,
+          "brightness": {
+            "nvidia_wmi_ec_backlight": 100
+          },
+          "owner_pid": 0,
+          "owner_start": null
+        },
+        "power": {
+          "off": true,
+          "connectors": {
+            "card2-eDP-1": "disabled"
+          }
+        },
+        "brightness": {
+          "nvidia_wmi_ec_backlight": 1
+        }
+      },
+      "wake": {
+        "ok": true,
+        "session": {
+          "entered_off": true,
+          "dimmed": true,
+          "brightness": {
+            "nvidia_wmi_ec_backlight": 100
+          },
+          "owner_pid": 0,
+          "owner_start": null
+        },
+        "power": {
+          "off": false,
+          "connectors": {
+            "card2-eDP-1": "enabled"
+          }
+        },
+        "brightness": {
+          "nvidia_wmi_ec_backlight": 1
+        }
+      },
+      "end": {
+        "ok": true,
+        "restored": {
+          "power": {
+            "off": true,
+            "connectors": {
+              "card2-eDP-1": "disabled"
+            }
+          },
+          "brightness": {
+            "nvidia_wmi_ec_backlight": 100
+          }
+        },
+        "entered_off": true
+      }
+    },
+    {
+      "begin": {
+        "ok": true,
+        "session": {
+          "entered_off": true,
+          "dimmed": true,
+          "brightness": {
+            "nvidia_wmi_ec_backlight": 100
+          },
+          "owner_pid": 0,
+          "owner_start": null
+        },
+        "power": {
+          "off": true,
+          "connectors": {
+            "card2-eDP-1": "disabled"
+          }
+        },
+        "brightness": {
+          "nvidia_wmi_ec_backlight": 1
+        }
+      },
+      "wake": {
+        "ok": true,
+        "session": {
+          "entered_off": true,
+          "dimmed": true,
+          "brightness": {
+            "nvidia_wmi_ec_backlight": 100
+          },
+          "owner_pid": 0,
+          "owner_start": null
+        },
+        "power": {
+          "off": false,
+          "connectors": {
+            "card2-eDP-1": "enabled"
+          }
+        },
+        "brightness": {
+          "nvidia_wmi_ec_backlight": 1
+        }
+      },
+      "end": {
+        "ok": true,
+        "restored": {
+          "power": {
+            "off": true,
+            "connectors": {
+              "card2-eDP-1": "disabled"
+            }
+          },
+          "brightness": {
+            "nvidia_wmi_ec_backlight": 100
+          }
+        },
+        "entered_off": true
+      }
+    }
+  ],
+  "watchdog_passed": true,
+  "final": {
+    "ok": true,
+    "session": null,
+    "power": {
+      "off": true,
+      "connectors": {
+        "card2-eDP-1": "disabled"
+      }
+    },
+    "brightness": {
+      "nvidia_wmi_ec_backlight": 100
+    }
+  },
+  "private_images_included": false
+}

@@ -15,6 +15,7 @@ for task_binary in computer-use-linux niri-clipboard; do
   install -m755 "$task_target/$task_profile/$task_binary" "$task_staging"
   mv -f -- "$task_staging" "$task_data/bin/$task_binary"
 done
+install -m755 "$task_root/scripts/niri-desktop-session.py" "$task_data/bin/niri-desktop-session.py"
 codex plugin marketplace add "$task_root"
 codex plugin add niri-computer-use@niri-local
 "$task_data/bin/computer-use-linux" setup

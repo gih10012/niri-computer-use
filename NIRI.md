@@ -4,7 +4,7 @@ Local Codex plugin based on MIT-licensed [computer-use-linux v0.7.7](https://git
 Upstream commit: `418892f10e6840c45d92e4911f499f2e33994c94`.
 
 Install with `bash scripts/install-niri.sh`. Requires Rust, Codex, niri,
-`grim`, `wtype`, `gio`, AT-SPI and access to
+`grim`, `wtype`, `gio`, Python 3, `brightnessctl`, AT-SPI and access to
 `/dev/uinput`. The script builds pinned dependencies, installs both binaries
 under `${XDG_DATA_HOME:-~/.local/share}/niri-computer-use/bin`, registers the
 `niri-local` marketplace and enables accessibility. It does not publish to GitHub.
@@ -100,3 +100,19 @@ with only HOME and PATH set. See `artifacts/cold-start.json` and run
 
 Uninstall with `bash scripts/uninstall-niri.sh`. Runtime binaries are retained
 for recovery. The source repository and upstream license remain intact.
+## Display-off Computer Use
+
+Mod+B retains the original `power-off-monitors` binding. Screenshots work
+while powered off; niri pointer and uinput events wake the panel. Plugin
+0.1.4 adds a skill-guided `niri-desktop-session.py begin/wake/end` workflow.
+Begin saves power/brightness and dims an off built-in panel before input;
+wake is used only when input needs it. End blanks before restoring brightness.
+Originally-on sessions are not dimmed. Explicit end is mandatory; optional
+owner-PID watchdog restores after agent exit. This is not automatic interception
+of arbitrary MCP clients. External monitors without controllable brightness
+are refused rather than woken at an unknown level.
+
+Verified on this laptop: requested minimum 1/100 (firmware actual floor 7),
+then restored 100/100 and DRM connector disabled. A screenshot captured while
+off was sent through the WeChat GUI to File Transfer Assistant; private
+screenshots are not included in this repository.

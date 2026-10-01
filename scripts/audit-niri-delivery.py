@@ -39,7 +39,10 @@ def main():
         assert (ROOT/path).is_file(),path
     summary={'passed':True,'plugin_version':legacy['version'],'gui_cases':153,'launch_cases':9,
              'cold_process_rounds':3,'host_tools':len(host['tools']),'binary_sha256':hashes,
-             'mac_hardware_tested':False,'desktop_rebooted':False,'github_published':False}
+             'mac_hardware_tested':False,'desktop_rebooted':False}
+    origin=subprocess.check_output(['git','remote','get-url','origin'],cwd=ROOT,text=True).strip()
+    publication=json.loads(subprocess.check_output(['gh','repo','view',origin,'--json','url,visibility']))
+    summary.update(github_published=True,github_url=publication['url'],github_visibility=publication['visibility'])
     (ROOT/'artifacts/delivery.json').write_text(json.dumps(summary,indent=2)+'\n')
     print(json.dumps(summary,indent=2))
 

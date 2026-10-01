@@ -32,6 +32,30 @@ Chromium may omit EditableText; Firefox may acknowledge a write without changing
 the DOM. Verify the actual value. If semantic replacement fails, explicitly
 focus the text field, send Ctrl+A, then type or paste and verify the result.
 
+## Display power and brightness
+
+Keep the user's Mod+B binding unchanged. Read-only screenshots work while
+monitors are powered off, but niri wakes them on pointer/uinput events.
+Before any GUI input, run the installed session helper using the shell:
+
+```sh
+python "$HOME/.local/share/niri-computer-use/bin/niri-desktop-session.py" begin
+```
+
+It records display power and brightness. If entry was powered off, it sets
+the minimum nonzero backlight level without waking the monitor. Only when
+GUI input is needed, run the same helper with `wake`; never wake first and
+dim afterwards. Then use the MCP tools normally. On success, error, or user
+cancellation, always run the helper with `end` before yielding. This powers
+off first and restores the saved brightness, avoiding a bright flash.
+If entry was already powered on, brightness and power are left unchanged.
+Use `status` to verify the result. If begin fails (for example an external
+monitor has no controllable backlight), stop before input and explain.
+For unattended workflows pass the same `--owner-pid PID` to begin/wake/end,
+using the long-lived agent process PID, not a short-lived shell: a watchdog
+restores the state after that process exits. Ownerless interactive sessions
+require explicit end; this is a skill workflow, not automatic MCP interception.
+
 ## Coordinates and input
 
 For full-desktop images, divide preview x/y by returned `scale`, then pass
